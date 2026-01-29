@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+
+  oracle:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-xe
+    environment:
+      ORACLE_PASSWORD: desafio
+      APP_USER: user_desafio
+      APP_USER_PASSWORD: psw_desafio
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'SELECT 1 FROM DUAL;' | sqlplus -s bancario/bancario@localhost/XEPDB1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  lancamentos-bancarios-api:
+    build: .
+    container_name: lancamentos-bancarios-api
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:oracle:thin:@//oracle:1521/XEPDB1
+      SPRING_DATASOURCE_USERNAME: desafioo
+      SPRING_DATASOURCE_PASSWORD: desafio
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.OracleDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      oracle:
+        condition: service_healthy
+
+volumes:
+  oracle-data:
